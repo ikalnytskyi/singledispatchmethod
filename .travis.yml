@@ -1,0 +1,75 @@
+dist: xenial
+language: python
+python: "3.7"
+cache: pip
+
+install:
+  - python -m pip install tox
+
+script:
+  - tox
+
+stages:
+  - name: lint
+  - name: test
+  - name: pypi
+    if: tag IS present
+
+jobs:
+  include:
+    - stage: lint
+      env: TOXENV=flake8
+      python: "3.7"
+
+    - stage: lint
+      env: TOXENV=black
+      python: "3.7"
+
+    - stage: lint
+      env: TOXENV=metadata
+      python: "3.7"
+
+    - stage: test
+      env: TOXENV=py27
+      python: "2.7"
+      script: tox -- --strict --ignore-glob "*_py3_only.py"
+
+    - stage: test
+      env: TOXENV=py35
+      python: "3.5"
+
+    - stage: test
+      env: TOXENV=py36
+      python: "3.6"
+
+    - stage: test
+      env: TOXENV=py37
+      python: "3.7"
+
+    - stage: test
+      env: TOXENV=py38
+      python: "3.8-dev"
+
+    - stage: test
+      env: TOXENV=pypy
+      python: "pypy"
+      script: tox -- --strict --ignore-glob "*_py3_only.py"
+
+    - stage: test
+      env: TOXENV=pypy3
+      python: "pypy3"
+
+    - stage: pypi
+      deploy:
+        - provider: pypi
+          user: $PYPI_USERNAME
+          password: $PYPI_PASSWORD
+          on:
+            tags: true
+            distributions: sdist bdist_wheel --universal
+      install: skip
+      script: skip
+
+notifications:
+  on_success: change
+  on_failure: always
